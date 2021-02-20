@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Workshop 3, Part 1. Bar Charts.</title>
+        <script src="https://d3js.org/d3.v6.js"></script>
+    </head>
+    <body>
+    <div id="mainDiv">
+    </div>
+        
+        <script type="text/javascript">
+            const width = 700
+            const height = 600
+
+            const margins = {
+                top: 20,
+                bottom: 20,
+                left: 20,
+                right: 20
+            }
+
+            const bounded = {
+                width: width - margins.left - margins.right,
+                height: height - margins.top - margins.bottom
+            }
+
+            const wrapper = d3.select('#mainDiv')
+            const svg = wrapper.append('svg')
+
+            svg.attr('width', width)
+            svg.attr('height', height)
+
+            const group = svg.append('g') // append a group for our visualisations
+                .style('transform', `translate(${margins.left}px, ${margins.top}px)`) // bounded
+
+            d3.csv('data.csv')
+            .then((dataset) => {
+                const xScaleTime = d3.scaleTime()
+                    .domain([d3.min(dataset, (d) => new Date(d['date'])),
+                            d3.max(dataset, (d) => new Date(d['date']))])
+                    .range([margins.left, bounded.width]);
+
+                const xScaleBand = d3.scaleBand()
+                    .domain(d3.timeYear.range(...xScaleTime.domain()))
+                    .range([margins.left, bounded.width])
+                    .padding(0.1)
+
+                const yScale = d3.scaleLinear()
+                      .domain([d3.min(dataset, (d) => parseInt(d['new_cases'])),
+                              d3.max(dataset, (d) => parseInt(d['new_cases']))])
+                      .range([bounded.height, margins.bottom]);
+                
+                const xAxis = d3.axisBottom(xScaleTime)
+                const yAxis = d3.axisRight(yScale)
+
+                const barWidth = 5
+
+                group.selectAll('rect')
+                    .data(dataset)
+                    .enter()
+                    .append('rect')
+                    .attr('x', d => ((xScaleTime(new Date(d['date'])) - (barWidth / 2))))
+                    .attr('y', d => (yScale(parseInt(d['new_cases']))))
+                    .attr('width', barWidth)
+                    .attr('height', (d) => {
+                        return (bounded.height - yScale(d['new_cases']))
+                    })
+                    .style('fill', 'lightsalmon')
+                
+                // Add our axes!
+                const xAxisPlot = group.append('g')
+                    .attr('class', 'x axis')    // TODO: add this x axis.
+                    .call(xAxis)
+                    .style('transform', `translateY(${bounded.height}px)`)
+
+                const yAxisPlot = group.append('g')
+                    .attr('class', 'y axis') // TODO: add this y axis.
+                    .call(yAxis)
+        });
+
+        </script>
+    </body>
+</html> 

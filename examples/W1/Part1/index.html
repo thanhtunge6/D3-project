@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Workshop 1 Part 1</title>
+        <script src="https://d3js.org/d3.v6.js"></script>
+
+    </head>
+    <body>
+
+    <div id="mainDiv"><ol></ol>
+    </div>
+        
+        <script type="text/javascript">
+        d3.csv('data.csv')
+            .then((dataset) => {
+                d3.select('div')
+                    .selectAll('p')
+                    .data(dataset)
+                    .join(
+                        enter => { return enter.append('p') },
+                        update => { return update },
+                        exit => { return exit.remove() }
+                    )
+                    .text(d => `${d.x}: ${d.y}`)
+                    .node()
+        });
+
+        </script>
+    </body>
+</html> 

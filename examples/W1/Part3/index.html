@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Workshop 1. Part 2</title>
+        <script src="https://d3js.org/d3.v6.js"></script>
+    </head>
+    <body>
+
+    <div id="mainDiv"><ol></ol>
+    </div>
+        
+        <script type="text/javascript">
+            const width = 500
+            const height = 500
+
+            const wrapper = d3.select('#mainDiv')
+            const svg = wrapper.append('svg')
+            svg.attr('width', width)
+            svg.attr('height', height)
+
+            const group = svg.append('g') // append a group for our visualisations
+                .style('transform', 'translate(20, 20)') // bounded
+
+            d3.csv('data.csv')
+            .then((dataset) => {
+                const xScale = d3.scaleLinear()
+                    .domain([d3.min(dataset, (d) => parseInt(d['x'])),
+                            d3.max(dataset, (d) => parseInt(d['x']))])
+                    .range([30, width-30]); // Answer
+
+                const yScale = d3.scaleLinear()
+                      .domain([d3.min(dataset, (d) => d['y']),
+                              d3.max(dataset, (d) => d['y'])])
+                      .range([height-30, 30]); // Answer
+                
+                group.selectAll('circle')
+                    .data(dataset)
+                    .enter()
+                    .append('circle')
+                    .attr('cx', d => (xScale(d['x'])))
+                    .attr('cy', d => (yScale(d['y'])))
+                    .attr('r', 5) // Answer
+                    .style('fill', 'blue')
+
+                // Add our axes!
+                const xAxis = d3.axisBottom(xScale)
+                const yAxis = d3.axisLeft(yScale)
+                
+                group.append('g')
+                    .attr('transform', `translate(0, ${height-30})`)
+                    .call(xAxis)
+                group.append('g')
+                    .attr('transform', `translate(30,0)`)
+                    .call(yAxis)
+        });
+
+        </script>
+    </body>
+</html> 

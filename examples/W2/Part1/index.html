@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Workshop 2, Part 1. Scatter Plot and Random Points</title>
+        <script src="https://d3js.org/d3.v6.js"></script>
+    </head>
+    <body>
+    <button id="generateButton">Generate</button>
+    <div id="mainDiv"><ol></ol>
+    </div>
+        
+        <script type="text/javascript">
+            const width = 700
+            const height = 600
+
+            const margins = {
+                top: 20,
+                bottom: 20,
+                left: 20,
+                right: 20
+            }
+
+            const bounded = {
+                width: width - margins.left - margins.right,
+                height: height - margins.top - margins.bottom
+            }
+
+            const wrapper = d3.select('#mainDiv')
+            const svg = wrapper.append('svg')
+
+            svg.attr('width', width)
+            svg.attr('height', height)
+
+            const group = svg.append('g') // append a group for our visualisations
+                .style('transform', `translate(${margins.left}px, ${margins.top}px)`) // bounded
+
+            d3.csv('data.csv')
+            .then((dataset) => {
+                const xScale = d3.scaleLinear()
+                    .domain([d3.min(dataset, (d) => parseInt(d['x'])),
+                            d3.max(dataset, (d) => parseInt(d['x']))])
+                    .range([margins.left, bounded.width]);
+
+                const yScale = d3.scaleLinear()
+                      .domain([d3.min(dataset, (d) => d['y']),
+                              d3.max(dataset, (d) => d['y'])])
+                      .range([bounded.height, margins.bottom]);
+                
+                const xAxis = d3.axisBottom(xScale)
+                const yAxis = d3.axisLeft(yScale)
+
+            const generateButton = d3.select("#generateButton")
+            generateButton.on('click', function() {
+                group.selectAll('circle')
+                    .data(dataset)
+                    .transition()
+                    .attr('cx', d => {
+                        return xScale(Math.floor(Math.random() * d3.max(dataset, (d) => parseInt(d['x']))) + d3.min(dataset, (d) => parseInt(d['x'])))
+                    })
+                    .attr('cy', d => {
+                        return yScale(Math.floor(Math.random() * d3.max(dataset, (d) => parseInt(d['y']))) + d3.min(dataset, (d) => parseInt(d['y'])))   
+                    })
+                    .attr('r', 5)
+            });
+
+            group.selectAll('circle')
+                .data(dataset)
+                .enter()
+                .append('circle')
+                .attr('cx', d => (xScale(d['x'])))
+                .attr('cy', d => (yScale(d['y'])))
+                .attr('r', 5)
+                .style('fill', 'blue')
+            
+            // Add our axes!
+            group.append('g')
+                .attr('transform', `translate(0, ${bounded.height})`)
+                .call(xAxis)
+            group.append('g')
+                .attr('transform', `translate(${margins.top},0)`)
+                .call(yAxis)
+        });
+
+        </script>
+    </body>
+</html> 

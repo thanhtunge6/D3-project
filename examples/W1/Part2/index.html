@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Workshop 1. Part 2</title>
+        <script src="https://d3js.org/d3.v6.js"></script>
+    </head>
+    <body>
+
+    <div id="mainDiv"><ol></ol>
+    </div>
+        
+        <script type="text/javascript">
+            const width = 500
+            const height = 500
+
+            const wrapper = d3.select('#mainDiv')
+            const svg = wrapper.append('svg')
+            svg.attr('width', width)
+            svg.attr('height', height)
+
+            const group = svg.append('g') // append a group for our visualisations
+                .style('transform', 'translate(10, 10)') // bounded
+
+            d3.csv('data.csv')
+            .then((dataset) => {
+                const xValueAxis = d3.scaleLinear()
+                    .domain([d3.min(dataset, (d) => parseInt(d['x'])),
+                            d3.max(dataset, (d) => parseInt(d['x']))])
+                    .range([10, width-10]); // Answer
+
+                const yValueAxis = d3.scaleLinear()
+                      .domain([d3.min(dataset, (d) => d['y']),
+                              d3.max(dataset, (d) => d['y'])])
+                      .range([10, height-10]); // Answer
+
+                      group.selectAll('circle')
+                        .data(dataset)
+                        .enter()
+                        .append('circle')
+                        .attr('cx', d => (xValueAxis(d['x'])))
+                        .attr('cy', d => (yValueAxis(d['y'])))
+                        .attr('r', 5) // Answer
+                        .style('fill', 'blue')
+        });
+
+        </script>
+    </body>
+</html> 

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Workshop 3, Part 1. Bar Charts.</title>
+        <script src="https://d3js.org/d3.v6.js"></script>
+    </head>
+    <body>
+    <div id="mainDiv">
+    </div>
+        
+        <script type="text/javascript">
+            const width = 700
+            const height = 600
+
+            const margins = {
+                top: 20,
+                bottom: 20,
+                left: 20,
+                right: 20
+            }
+
+            const bounded = {
+                width: width - margins.left - margins.right,
+                height: height - margins.top - margins.bottom
+            }
+
+            const wrapper = d3.select('#mainDiv')
+            const svg = wrapper.append('svg')
+
+            svg.attr('width', width)
+            svg.attr('height', height)
+
+            const group = svg.append('g') // append a group for our visualisations
+                .style('transform', `translate(${margins.left}px, ${margins.top}px)`) // bounded
+            
+            const projection = d3.geoMercator()
+                .scale(60000)
+                .center([104, 1.4])
+
+            const path = d3.geoPath().projection(projection)
+            
+            d3.json('response.json')
+            .then((dataset) => {
+                const features = []
+                let max = 0
+
+                dataset.forEach((geoJsonObject) => {
+                    let xmlHttp = new XMLHttpRequest()
+                    let gender = 'male'
+                    xmlHttp.open('GET', `https://developers.onemap.sg/privateapi/popapi/getMaritalStatus?planningArea=${geoJsonObject.pln_area_n}&year=2010&gender=${gender}&token=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOjMxMDQsInVzZXJfaWQiOjMxMDQsImVtYWlsIjoiaXdsZUBpY2xvdWQuY29tIiwiZm9yZXZlciI6ZmFsc2UsImlzcyI6Imh0dHA6XC9cL29tMi5kZmUub25lbWFwLnNnXC9hcGlcL3YyXC91c2VyXC9zZXNzaW9uIiwiaWF0IjoxNjEyMzc3MTUwLCJleHAiOjE2MTI4MDkxNTAsIm5iZiI6MTYxMjM3NzE1MCwianRpIjoiMDMyMTQ0ZGVmMTdmNWYyNjdhN2E3MTU3NzJjOWZjY2YifQ.1TeNqvRZNTA4tLnTQEDcrldIecsfvqSj79ITHrT1VxY`, false)
+                    xmlHttp.send(null)
+
+                    let result = JSON.parse(xmlHttp.responseText)
+                    let dataPoint = (result[0] ? result[0]['single'] : 0)
+
+                    if (result.constructor === Array) {
+                        if (dataPoint > max) {
+                            max = dataPoint
+                        }
+                    } 
+
+                    let geoJson = JSON.parse(geoJsonObject.geojson)
+                    features.push({
+                        type: 'Feature',
+                        properties: {
+                            Name: geoJsonObject.pln_area_n,
+                            dataPoint: dataPoint
+                        },
+                        geometry: geoJson
+                    })
+                })
+
+                const colourIntensityScale = d3.scaleSequential(d3.interpolateReds)
+                    .domain([0, max])
+
+                console.log(max)
+                group.selectAll('path')
+                    .data(features)
+                    .enter()
+                    .append('path')
+                    .attr('d', path)
+                    .attr('fill', (d) => {
+                        return `${colourIntensityScale(d.properties['dataPoint'])}`
+                    })
+                    .attr('stroke', '#333')
+            });
+
+        </script>
+    </body>
+</html> 
