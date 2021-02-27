@@ -1,0 +1,4 @@
+story_highlow,max,min,quan25,quan75,median
+high storey,1.18,0.2,0.508,0.8,0.675
+low storey,1.185,0.16,0.335,0.48,0.4
+medium storey,1.095,0.17,0.367,0.53,0.438
