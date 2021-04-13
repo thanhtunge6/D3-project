@@ -1,17 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
+<style>
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2px;
+}
+
+div.tooltipbox {
+  position: absolute;
+  text-align: center;
+  width: 150px;
+  height: 70px;
+  padding: 2px;
+  font: 12px sans-serif;
+  background: lightsteelblue;
+  border: 0px;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+div.tooltipline {
+  position: absolute;
+  text-align: center;
+  width: 75px;
+  height: 20px;
+  padding: 2px;
+  font: 12px sans-serif;
+  background: lightsteelblue;
+  border: 0px;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+</style>
 <head>
-    <title>Workshop 3, Part 1. Bar Charts.</title>
+    <title>Task A</title>
     <script src="https://d3js.org/d3.v6.js"></script>
 </head>
 <body>
 <div id="boxplotDiv">
-    <h2>What is the range of hdb price for each region?</h2>
+    <h2>What is the price per square meter (SGD/m2) range for low, medium and high storey?</h2>
 </div>
 <div id="mapDiv">
-    <h2>What are the price per square meter of HDB house for each region?</h2>
+    <h2>What is the price per square meter of HDB house for each region?</h2>
 </div>
-<div id="secDiv">
+<div id="lineDiv">
+    <h2>How does remaining lease affect the price of HDB?</h2>
 </div>
 
 <script type="text/javascript">
@@ -21,7 +57,7 @@
             const margins = {
                 top: 20,
                 bottom: 20,
-                left: 20,
+                left: 50,
                 right: 20
             }
 
@@ -29,6 +65,11 @@
                 width: width - margins.left - margins.right,
                 height: height - margins.top - margins.bottom
             }
+
+            // create a tooltip
+            var tooltip_div = d3.select("#boxplotDiv").append("div")
+                .attr("class", "tooltipbox")
+                .style("opacity", 0);
 
             // append the svg object to the body of the page
             var svgbp = d3.select("#boxplotDiv")
@@ -48,7 +89,7 @@
                         .attr("transform", "translate(0," + height + ")")
                         .call(d3.axisBottom(x))
                 var y = d3.scaleLinear()
-                                .domain([0.1,1.2])
+                                .domain([2000,11999])
                                 .range([height, 0])
                 svgbp.append("g").call(d3.axisLeft(y))
 
@@ -73,6 +114,21 @@
                         .attr("width", boxWidth )
                         .attr("stroke", "black")
                         .style("fill", "#69b3a2")
+                        .on("mouseover", function(event,d) {
+                            tooltip_div.transition()
+                               .duration(200)
+                               .style("opacity", .9);
+                            tooltip_div.html("Max: "+d.max + "<br/>"
+                                            +"Min: "+d.min + "<br/>"
+                                            +"Median: "+d.median + "<br/>"
+                                            +"75th percentile: "+d.quan75 + "<br/>"
+                                            +"25th percentile: "+d.quan25)
+                                .style("left", (event.pageX) + "px")
+                                .style("top", (event.pageY - 28) + "px");})
+                        .on("mouseout", function(d) {
+                            tooltip_div.transition()
+                               .duration(500)
+                               .style("opacity", 0);});
                 svgbp.selectAll("medianLines")
                         .data(dataset)
                         .enter()
@@ -83,6 +139,11 @@
                         .attr("y2", function(d){return(y(d.median))})
                         .attr("stroke", "black")
                         .style("width", 80)
+                svgbp.append("text")
+                    .attr("text-anchor", "middle")
+                    .style("font-size", "15px")
+                    .attr("transform", "translate(0,-5)")
+                    .text("$/m2");
             })
 
             const wrapper = d3.select('#mapDiv')
@@ -160,6 +221,76 @@
                                  .text("");
                         } )
             });
+
+            // set the ranges
+            var xl = d3.scaleLinear().domain([40, 100]).range([0, width]);
+            var yl = d3.scaleLinear().range([height, 0]);
+
+            // define the line
+            var valueline = d3.line()
+                .x(function(d) { return xl(d.remaining_lease); })
+                .y(function(d) { return yl(d.mean); });
+
+            // create a tooltip
+            var line_tooltip_div = d3.select("#lineDiv").append("div")
+                .attr("class", "tooltipline")
+                .style("opacity", 0);
+
+            // append the svg object to the body of the page
+            var svgl = d3.select("#lineDiv")
+                .append("svg")
+                .attr("width", width + margins.left + margins.right)
+                .attr("height", height + margins.top + margins.bottom)
+                .append("g")
+                .attr("transform", "translate(" + margins.left + "," + margins.top + ")");
+
+            d3.csv("remaining_lease.csv").then(function(data) {
+                // scale the range of the data
+                xl.domain(d3.extent(data, function(d) { return d.remaining_lease; }));
+                yl.domain([0, d3.max(data, function(d) { return d.mean; })]);
+
+                // add the valueline path.
+                svgl.append("path")
+                    .data([data])
+                    .attr("class", "line")
+                    .attr("d", valueline);
+
+                // add the dots with tooltips
+                svgl.selectAll("dot")
+                    .data(data)
+                    .enter().append("circle")
+                    .attr("r", 5)
+                    .attr("cx", function(d) { return xl(d.remaining_lease); })
+                    .attr("cy", function(d) { return yl(d.mean); })
+                    .on("mouseover", function(event,d) {
+                        line_tooltip_div.transition()
+                            .duration(200)
+                            .style("opacity", .9);
+                        line_tooltip_div.html(d.mean+" $/m2")
+                            .style("left", (event.pageX) + "px")
+                            .style("top", (event.pageY - 28) + "px");})
+                    .on("mouseout", function(d) {
+                        line_tooltip_div.transition()
+                            .duration(500)
+                            .style("opacity", 0);});
+                // add the X Axis
+                svgl.append("g")
+                    .attr("transform", "translate(0," + height + ")")
+                    .call(d3.axisBottom(xl));
+                // add the Y Axis
+                svgl.append("g")
+                    .call(d3.axisLeft(yl));
+                svgl.append("text")
+                    .attr("text-anchor", "middle")
+                    .style("font-size", "15px")
+                    .attr("transform", "translate(0,-5)")
+                    .text("$/m2");
+                svgl.append("text")
+                    .attr("text-anchor", "middle")
+                    .style("font-size", "15px")
+                    .attr("transform", "translate(690,590)")
+                    .text("Years");});
+
 
 
 
