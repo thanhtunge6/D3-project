@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<style>
+
+.line {
+  fill: none;
+  stroke: steelblue;
+  stroke-width: 2px;
+}
+
+div.tooltipbox {
+  position: absolute;
+  text-align: center;
+  width: 100px;
+  height: 15px;
+  padding: 2px;
+  font: 12px sans-serif;
+  background: lightsteelblue;
+  border: 0px;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+</style>
+<head>
+    <title>Task B</title>
+    <script src="https://d3js.org/d3.v6.js"></script>
+</head>
+<body>
+<div id="main">
+    <h2>Global temperature abnormally 1880-2020</h2>
+</div>
+<div id="line">
+    <h2>Global temperature abnormally 1880-2020</h2>
+</div>
+<script type="text/javascript">
+    var tooltip_div = d3.select("#main").append("div")
+                .attr("class", "tooltipbox")
+                .style("opacity", 0);
+    const height = 300;
+    const legendPadding = 90;
+    const monthsAbbr = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const width = 1200;
+    const xAxisPadding = 150;
+    const yAxisPadding = 90;
+
+    const svg = d3.select('#main')
+        .append('svg')
+        .attr('width', width)
+        .attr('height', height)
+        .attr('overflow', 'visible');
+
+    const xScale = d3.scaleLinear()
+        .domain([1880, 2021])
+        .range([yAxisPadding, width]);
+
+    const yScale = d3.scaleLinear()
+        .domain([12, 1])
+        .range([height - xAxisPadding, 0]);
+
+    const colors = ['#9400D3', '#4B0082', '#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000', '#FF0000'];
+    const legend_colors = ['#9400D3', '#4B0082', '#0000FF', '#00FF00', '#FFFF00', '#FF7F00', '#FF0000'];
+    const legend_temp = ['-0.6', '-0.3', '0', '0.3', '0.6', '0.9', ''];
+    const colorsLength = colors.length;
+
+    const getColor = (bin) => {
+        return colors[bin];
+    };
+
+    const barHeight = ((height - xAxisPadding) / (monthsAbbr.length - 1)) - 1;
+    const barWidth = (width / (2021 - 1880)) - 1;
+
+    d3.csv('preprocessed_data.csv').then((dataset) => {
+        svg.selectAll('rect')
+        .data(dataset)
+        .enter()
+        .append('rect')
+        .attr('x', data => xScale(data.year))
+        .attr('y', data => yScale(data.month))
+        .attr('width', barWidth)
+        .attr('height', barHeight)
+        .attr('fill', data => getColor(data.bin))
+        .attr('id', (_, i) => i)
+        .on("mouseover", function(event,d) {
+            tooltip_div.transition()
+                .duration(200)
+                .style("opacity", .9);
+            tooltip_div.html(monthsAbbr[d.month-1]+"-"+d.year + ": "
+                                            +d.global)
+                       .style("left", (event.pageX) + "px")
+                       .style("top", (event.pageY - 28) + "px");})
+            .on("mouseout", function(d) {
+                tooltip_div.transition()
+                    .duration(500)
+                    .style("opacity", 0);});})
+
+    const axesTickSize = 10;
+    const axesNameFontSize = 15;
+    const xAxis = d3.axisBottom(xScale)
+        .tickFormat(tick => tick);
+
+    svg.append('g')
+        .attr('transform', `translate(0, ${height - xAxisPadding + barHeight})`)
+        .call(xAxis);
+
+    const yAxis = d3.axisLeft(yScale)
+        .tickFormat(month => monthsAbbr[month - 1]);
+
+    svg.append('g')
+        .attr('id', 'yAxis')
+        .attr('transform', `translate(${yAxisPadding - 5}, ${barHeight / 2})`)
+        .call(yAxis);
+
+    d3.select('#yAxis .domain').remove();
+
+    svg.selectAll('g')
+        .attr('font-size', axesTickSize);
+
+    legend_colors.forEach((color, i) => {
+        const squareSideLength = barHeight;
+        const squareSideWidth = 2*barHeight;
+        const xCoord =  yAxisPadding + (squareSideWidth * i);
+        const yCoord = height - xAxisPadding + legendPadding;
+        svg.append('rect')
+            .attr('x', xCoord)
+            .attr('y', yCoord)
+            .attr('width', squareSideWidth)
+            .attr('height', squareSideLength)
+            .attr('fill', color)
+            .attr('stroke', 'black')
+            .attr('stoke-width', '1');
+        svg.append('text')
+            .text(legend_temp[i])
+            .attr('transform', `translate(${xCoord + 0.8*squareSideWidth}, ${yCoord + squareSideLength + 10})`)
+            .attr('font-size', 10);
+    });
+
+</script>
+</body>
+</html>
